@@ -1,8 +1,8 @@
-from re import L
 import pandas as pd
 import sys
 import numpy as np
 from my_logistic_regression import MyLogisticRegression as MyLR
+from sklearn.metrics import accuracy_score
 
 
 if __name__ == "__main__":
@@ -44,18 +44,37 @@ if __name__ == "__main__":
 
         #create logistic regression object
         thetas = np.array([1] * (X.shape[1] + 1)).reshape((X.shape[1] + 1), 1)
-        lr = MyLR(thetas)
+        lr = MyLR(thetas, 0.5, 10000)
         #perform gradient descent
         lr.fit_(X, y)
-
         #creating dataframe wih weights for each house
         df_house = pd.DataFrame(data=lr.thetas, columns=[house])
         df_weights = pd.concat([df_weights, df_house], axis=1)
     
     #save weights to csv file
-    print(df_weights)
+    #print(df_weights)
     f = open('./logreg_weights.csv', 'w')
     df_weights.to_csv(f, index=False)
     f.close()
 
+    #predict for each house
+    #print X start
+    houses = df_weights.columns.values
+    y_hatdf = pd.DataFrame(columns=houses)
+    print(houses)
+    for house in houses:
+        #create logistic regression object
+        thetas = np.array(df_weights[house])
+        #reshape thetas to be a column vector
+        thetas = thetas.reshape(len(thetas), 1)
+        lr = MyLR(thetas)
+        #predict house of each student
+        y_hat = lr.predict_(X)
+        y_hat = y_hat.reshape(len(y_hat))
+        #add column to dataframe
+        y_hatdf[house] = y_hat
+    y_hatdf['predicted_house'] = y_hatdf.idxmax(axis=1)
+
+    accuracy = accuracy_score(df['Hogwarts House'], y_hatdf['predicted_house'])
+    print("Accuracy: %.3f" % accuracy)
 
